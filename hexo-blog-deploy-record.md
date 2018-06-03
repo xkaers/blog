@@ -7,24 +7,24 @@ categories: hexo 折腾
 tags: hexo
 ---
 
-#### 起因 ####
+### 起因
 
 一个月前开始重新学Java相关的东西，包括Spring，Netty等WEB和SERVER相关的东西，于是想在本地部署一个博客用于记录学习过程，想要的东西很简单，公网可以访问NAS,路由,博客.之前已经买好了三年的域名，三个服务仅仅三级域名不同，访问方式都是`https://*.kaers.top`.折腾之旅就此展开。
 
-#### 开搞 ####
-#### 手上已经有的东西 ####
+### 开搞
+### 手上已经有的东西
 - 黑裙NAS
 - K2路由器
 - 千兆交换机
 - 公网IP(会变，但是不频繁)，有443端口可用
 - 域名(三年)
 
-####方案一：NAS跑博客，K2跑Nginx映射到公网
+###方案一：NAS跑博客，K2跑Nginx映射到公网
 
 初始的计划是`在NAS上面部署，然后直接用K2映射到公网`，此时路由器的系统是H大的老毛子，上面有lnmp但是路由是最低配的K2,闪存太小根本没法正常初始化环境.试过内存中安装、SMB扩容之类的东西，但是结果都不理想。虽然可以直接手动安装nginx,不用lnmp环境，但是路由关机重启后这些东西都会掉还要写脚本在每次开机后自动去安装配置，很麻烦。尝试了两天后无果，放弃。后面的方案还会尝试刷LEDE用nginx,这是后话。
 
 
-####方案二：NAS虚拟机中跑软路由，USB扩展一个口作为WAN，K2作为纯AP
+###方案二：NAS虚拟机中跑软路由，USB扩展一个口作为WAN，K2作为纯AP
 
 在方案1失败后想在NAS上面装软路由(主要是没试过软路由，听说性能非常强，想试试)，但是NAS是单网口，做单臂的话需要重新买千兆VLAN交换机，手里已经有一个网件的傻瓜交换机了，不想买新的，另一个原因是单臂必然会占用一部分带宽，虽然说只是50M的联通光纤，跑满了也就占用10M不到，但是强迫症心里不爽啊，SO只能买USB千兆网卡扩展出来一个网口，至于为啥不买一个PCI的网卡是因为华擎的N3150主板只有一个PCI接口，并且上面已经插了PCI转SATA卡.经过各种取舍，计划变成`NAS虚拟机中跑软路由，USB扩展一个网口作为WAN，K2作为纯AP.`
 
@@ -46,7 +46,7 @@ tags: hexo
 
 既然水平有限，自己编译驱动搞不定这网卡，于是就开始上网找有没有别人编译好的驱动，我直接拿来用，看看能不能驱起来于是找到了[这个](https://xpenology.com/forum/topic/9508-driver-extension-jun-102bdsm61x-for-3615xs-3617xs-916/),下载后里面有extra.lzma，在linux下解压出来有r8152.ko的驱动程序(8152/8153是共用驱动的)，拿去注入没有报错，重启nas后依然凉凉。到这里我就打算放弃自己搞驱动来驱了，虽然当时找到的还有其他方法没有尝试，比如改引导之类的，但是当时意识到在这个上面花的时间太多了，于是就停下来了，退网卡，不搞了。但是博客还是没有搭起来啊，搭博客还是要搞的。然后就是下面的方案三。
 
-####方案三：路由器换LEDE系统在上面跑Nginx
+###方案三：路由器换LEDE系统在上面跑Nginx
 
 之所以一开始没有直接换路由系统，一部分原因是因为老毛子提供的开箱即用和丰富的第三方脚本扩展用起来很方便，另一个是对第二种方案有点好奇，想试试。既然前两种方案都pass掉了，那就试试换个系统把，k2能刷的好用的系统也就那么几个，老毛子，lede,openwrt(已经合并到lede了)...
 那么就试试LEDE把，系统版本有点老，是17年的系统，18年就没再更新了，不过想想也是，k2这匮乏到可怜的硬件也实在没法玩出来多大的花，下载、安装一气呵成，进入路由管理界面，看起来还是蛮小清新的，网络配置一下能上网后第一件事就是去找软件扩展，路由的软件中心使用的是opkg，这也是大多数路由系统用的软件包管理器了，比较轻量。找到nginx下载安装简单配置后就休息了，第二天晚上回来后一配置发现特么好像不支持ssl,这让我怎么玩，运营商80端口已经封了，就算不封也不打算用80，然后开始研究怎么把ssl支持打包进nginx,然后手动安装。lede系统比较小，8M闪存在剩下3M不到的样子，一个支持ssl的nginx大概在不到2M，空间还是够用的，找了好几个支持ssl的nginx安装包都无法正常安装进系统。两个原因让我立即放弃了这个方案，1.时间和精力。2.ssl支持需要在每次连接握手时耗费cpu资源在验证密钥，以及加解密相关的计算上，这对于7620的cpu来说还是有压力的(LEDE无法支持硬件转发，全靠CPU来做，最然K2本身硬件支持是有的[网上查到的不知道是否准确]). 虽然方案是放弃了，但是路由系统保留下来了，一些在老毛子上面用的脚本，比如动态域名更新，servChan微信通知等，都在LEDE上面弄好了，这块按下不表。
@@ -54,7 +54,7 @@ tags: hexo
 > - [动态域名更新教程](https://www.xdty.org/1907)
 > - [动态域名更新脚本](https://github.com/xdtianyu/scripts/tree/master/ddns)
 
-####方案四：NAS上装Gitlab、装虚拟机跑Nginx,博客,Jenkins
+###方案四：NAS上装Gitlab、装虚拟机跑Nginx,博客,Jenkins
 
 前面做了这么多事情好像都是在做和博客搭建无关的前期准备，到这个方案终于开始博客搭建相关的东西了。其实在最开始的时候在公司的虚拟机上面已经验证过Hexo博客的搭建，可以顺利跑起来，所以到真实环境下准备开搞的时候就跑去研究更完善的方法了。本方案将持续集成也加入进来，是由于博客更新的时候如果没有CI的话，每次发布新的内容都要手动重新生成，部署，很麻烦。Jenkins在公司想推的时候也有过相关的研究，算是有点熟悉，这个方案中真正麻烦的地方在于gitlab.本方案中Hexo博客+Jenkins+Nginx(作为所有服务的反向代理)运行在群晖虚拟机中，Gitlab是直接在群晖的套件中心下载安装的，到gitlab可以正常使用都是很顺利的，后面由于想要把Gitlab映射到公网访问的时候出现了麻烦，并且最后也没找到解决办法。
 
@@ -71,7 +71,7 @@ Gitlab出现的问题是Nginx代理时的302跳转(`这个跳转会把https跳�
 
 截至放弃此方案时，在内网的测试，已经可以实现`push博客到GitLab`->`GitLab webhooks` ->`Jenkins` ->`拉取最新的博客+调用Hexo重新生成部署博客`->`浏览器刷新博客`查看新内容。即我们只需要干两件事，`push博客、刷新浏览器`，这也是搭建博客都会使用的方案，不管是全部自己搭建还是下面的方案四使用的Github Pages.
 
-####方案五：Github Pages+Travis-ci实现blog分支推送自动部署 
+###方案五：Github Pages+Travis-ci实现blog分支推送自动部署 
 
 现在来到广大码农用户使用率最高的Github Pages方案了，一开始没选这个方案的原因时在开始折腾本文说的东西之前已经尝试过，感觉速度不是很理想，并且绝大多数时候都需要翻墙才能正常访问。上面各种方法都试过了，现在没办法只好在来试试这个方法了，这方面的教程很多，照着来很快就搞定了。下面既然还有方案六很显然这个方案也是被Pass掉的，问题就出在Travis-ci上，如果想让Github的Push事件触发Travis-ci的编译部署就需要在Github `Integrations & services`中添加Travis CI服务，但是这个持续集成服务即将在2018年10月1日被Github正式弃用了，算算时间还有四个月，后面不能用了还是要折腾。
 
@@ -83,7 +83,7 @@ Gitlab出现的问题是Nginx代理时的302跳转(`这个跳转会把https跳�
 
 PS:其实也研究过Nginx cgi调用shell处理hooks,要写好长的处理脚本.头疼
 
-####方案六[最终定型]：NAS虚拟机中跑Hexo+Nginx
+###方案六[最终定型]：NAS虚拟机中跑Hexo+Nginx
 
 来到最后的方案，也是我现在使用的方案，现在用起来是这样的，平时写博客是保存在OneDrive中，公司和家里电脑都装有，可以自动同步，在哪儿都能写，写完后复制到群晖的blog目录下，此目录是共享的，在虚拟机中会开机自动挂载到`/mnt/blog_source`中，然后ssh进入虚拟机，cp到`/home/blog-source`下，虚拟机中的`incron`会监控这个目录，文件变更后会执行脚本生成，部署到nginx,然后刷新页面就可以看到了，同时脚本会将博客文件提交到github存档。所以要干的也就三件事儿：
 > - 1.从OneDrive复制到群晖Blog
@@ -93,41 +93,41 @@ PS:其实也研究过Nginx cgi调用shell处理hooks,要写好长的处理脚本
 > [如何使用 Incron 监控重要的文件和文件夹](https://blog.itnote.me/Linux/How-to-use-incron/)
 
 下面是Incron执行的脚本文件内容，在博客更新时也会调用[ServChan](http://sc.ftqq.com/3.version)发送一个微信通知
+``` bash
+#!/bin/bash
 
-    #!/bin/bash
-    
-    curl -s "http://sc.ftqq.com/这里是ServChan的Key.send?text=HexoBlog" -d "&desp=监控到博客source变更，开始更新" &
-    
-    cd /home/kaers/blog/source/_posts
-    rm -rf *
-    cp -r /home/kaers/blog-source/. /home/kaers/blog/source/_posts 
-    cd /home/kaers/blog/source/_posts
-    rm -rf README.md
-    
-    cd /home/kaers/blog
-    hexo clean
-    hexo g
-    
-    systemctl restart nginx.service
-    
-    cd /home/kaers/blog-source
-    git config user.name "xkaers"
-    git config user.email "github注册邮箱@qq.com"
-    git add --all
-    git commit -m "blog update at `date +"%Y-%m-%d %H:%M"`"
-    git push --force --quiet "https://github-Personal-access-tokens@github.com/xkaers/blog.git" master:master
-    
-    curl -s "http://sc.ftqq.com/这里是ServChan的Key.send?text=HexoBlog" -d "&desp=博客更新完成" &
+curl -s "http://sc.ftqq.com/这里是ServChan的Key.send?text=HexoBlog" -d "&desp=监控到博客source变更，开始更新" &
+
+cd /home/kaers/blog/source/_posts
+rm -rf *
+cp -r /home/kaers/blog-source/. /home/kaers/blog/source/_posts 
+cd /home/kaers/blog/source/_posts
+rm -rf README.md
+
+cd /home/kaers/blog
+hexo clean
+hexo g
+
+systemctl restart nginx.service
+
+cd /home/kaers/blog-source
+git config user.name "xkaers"
+git config user.email "github注册邮箱@qq.com"
+git add --all
+git commit -m "blog update at `date +"%Y-%m-%d %H:%M"`"
+git push --force --quiet "https://github-Personal-access-tokens@github.com/xkaers/blog.git" master:master
+
+curl -s "http://sc.ftqq.com/这里是ServChan的Key.send?text=HexoBlog" -d "&desp=博客更新完成" &
+```
     
 脚本很简单，就是繁杂的手动操作自动执行，没什么难度。
 
-#### 小结 ####
+### 小结 
 
 到这里博客搭建算是告一段落了，经过一个月的折腾，我得到的仅仅是一个操作起来并不是很方便的博客，但是也已经满足我了，并且也不想继续投入时间精力搞这个东西了。前面的几个方案花费了大量的时间，简单来说就是好奇心害死猫，可是如果不是心存这份好奇，又怎么在技术这一行走下去呢，在允许的情况下还是需要花费尽可能多的时间折腾一个不熟悉的东西，接触到的很多东西可能暂时用不上，但是能很大的扩充知识面，这些东西就算是以后也不会用的上，至少经历过了，有收获有成就感，也是蛮开心的一件事儿，这或许也就技术的魅力吧
 
 好了，下面是针对整个文章搞的事情的正式总结：
 
-> 
 > - 1. 百兆以下宽带K2级别的路由器足够，不需要用软路由，费电
 > - 2. 群晖对各种外设的驱动很匮乏，买之前查好资料，不然白白浪费时间精力
 > - 3. CI/CD对效率提升很重要，有时间还是熟悉一下，学起来很快。`除了Jenkins，TeamCity也蛮好用，界面精细`
